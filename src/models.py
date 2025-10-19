@@ -8,6 +8,8 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, TimeSeriesSplit
+from skopt import BayesSearchCV
+from skopt.space import Real, Integer
 from xgboost import XGBClassifier
 from typing import Tuple, Dict, Any, List
 
@@ -44,6 +46,26 @@ class ModelTrainer:
             }
         }
     
+    def _get_bayesian_parameter_space(self) -> Dict[str, Any]:
+        """
+        Define parameter space for Bayesian optimization.
+        
+        Returns:
+            Dictionary of parameter spaces for each model
+        """
+        return {
+            "xgboost": {
+                "n_estimators": Integer(50, 1000),
+                "max_depth": Integer(2, 10),
+                "learning_rate": Real(0.001, 0.5, prior='log-uniform'),
+                "subsample": Real(0.6, 1.0, prior='uniform'),
+                "colsample_bytree": Real(0.6, 1.0, prior='uniform'),
+                "reg_alpha": Real(0.001, 10.0, prior='log-uniform'),
+                "reg_lambda": Real(0.001, 10.0, prior='log-uniform'),
+                "gamma": Real(0.001, 5.0, prior='log-uniform')
+            }
+        }
+    
     def _get_default_models(self) -> Dict[str, Any]:
         """
         Create model instances with default hyperparameters.
@@ -75,7 +97,7 @@ class ModelTrainer:
     
     def _tune_hyperparameters(self, X_train: np.ndarray, y_train: np.ndarray) -> Dict[str, Any]:
         """
-        Perform hyperparameter tuning using RandomizedSearchCV for Random Forest and early stopping for XGBoost.
+        Perform hyperparameter tuning using RandomizedSearchCV for Random Forest and BayesSearchCV for XGBoost.
         
         Args:
             X_train: Training features
@@ -86,6 +108,7 @@ class ModelTrainer:
         """
         print("Performing hyperparameter tuning...")
         parameter_grids = self._get_parameter_grids()
+        bayesian_spaces = self._get_bayesian_parameter_space()
         tuned_models = {}
         
         # Use TimeSeriesSplit for time series data
@@ -116,59 +139,33 @@ class ModelTrainer:
         print(f"    Best parameters: {rf_random_search.best_params_}")
         print(f"    Best CV score: {rf_random_search.best_score_:.4f}")
         
-        # Tune XGBoost with early stopping approach
-        print("  Tuning xgboost...")
-        best_xgb_score = 0
-        best_xgb_params = None
-        best_xgb_model = None
+        # Tune XGBoost with BayesSearchCV
+        print("  Tuning xgboost with Bayesian optimization...")
+        xgb_base_model = XGBClassifier(
+            objective="binary:logistic",
+            eval_metric="logloss",
+            n_jobs=-1,
+            random_state=self.random_state,
+            verbosity=0
+        )
         
-        # Split data for early stopping
-        split_idx = int(0.8 * len(X_train))
-        X_train_split, X_val_split = X_train[:split_idx], X_train[split_idx:]
-        y_train_split, y_val_split = y_train[:split_idx], y_train[split_idx:]
+        xgb_bayes_search = BayesSearchCV(
+            estimator=xgb_base_model,
+            search_spaces=bayesian_spaces["xgboost"],
+            cv=tscv,
+            scoring='accuracy',
+            n_iter=50,  # Number of iterations for Bayesian optimization
+            n_jobs=-1,
+            verbose=0,
+            random_state=self.random_state
+        )
         
-        # Early stopping-based tuning for XGBoost
-        for n_est in parameter_grids["xgboost"]["n_estimators"]:
-            for max_d in parameter_grids["xgboost"]["max_depth"]:
-                for lr in parameter_grids["xgboost"]["learning_rate"]:
-                    xgb_model = XGBClassifier(
-                        n_estimators=n_est,
-                        max_depth=max_d,
-                        learning_rate=lr,
-                        subsample=0.9,
-                        colsample_bytree=0.9,
-                        objective="binary:logistic",
-                        eval_metric="logloss",
-                        n_jobs=-1,
-                        random_state=self.random_state,
-                        verbosity=0,
-                        early_stopping_rounds=10
-                    )
-                    
-                    # Use early stopping for faster training
-                    xgb_model.fit(
-                        X_train_split, y_train_split,
-                        eval_set=[(X_val_split, y_val_split)],
-                        verbose=False
-                    )
-                    
-                    # Evaluate on validation set
-                    val_score = xgb_model.score(X_val_split, y_val_split)
-                    
-                    if val_score > best_xgb_score:
-                        best_xgb_score = val_score
-                        best_xgb_params = {
-                            'n_estimators': xgb_model.get_booster().num_boosted_rounds(),
-                            'max_depth': max_d,
-                            'learning_rate': lr
-                        }
-                        best_xgb_model = xgb_model
+        xgb_bayes_search.fit(X_train, y_train)
+        tuned_models["xgboost"] = xgb_bayes_search.best_estimator_
+        self.best_params["xgboost"] = xgb_bayes_search.best_params_
         
-        tuned_models["xgboost"] = best_xgb_model
-        self.best_params["xgboost"] = best_xgb_params
-        
-        print(f"    Best parameters: {best_xgb_params}")
-        print(f"    Best validation score: {best_xgb_score:.4f}")
+        print(f"    Best parameters: {xgb_bayes_search.best_params_}")
+        print(f"    Best CV score: {xgb_bayes_search.best_score_:.4f}")
         
         return tuned_models
     
@@ -207,7 +204,7 @@ class ModelTrainer:
         for name, model in models.items():
             print(f"  Training {name}...")
             
-            # For XGBoost, create a fresh model without early stopping for final training
+            # For XGBoost, create a fresh model with optimized parameters for final training
             if name == "xgboost" and self.enable_hyperparameter_tuning:
                 # Get the best parameters from tuning
                 best_params = self.best_params.get(name, {})
