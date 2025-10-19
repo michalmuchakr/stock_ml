@@ -6,6 +6,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 from dateutil import tz
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 TWELVE_URL = "https://api.twelvedata.com/time_series"
 

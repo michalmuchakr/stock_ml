@@ -19,7 +19,7 @@ Build a **short‑horizon stock movement predictor** that:
   - Cumulative return curve
   - Rolling Sharpe (optional)
 - A **short note** in `NOTES.md` describing design choices/tradeoffs and how to run.
-- Use environment variable **`TWELVEDATA_API_KEY`** (do not hardcode keys).
+- Environment configuration with **`TWELVEDATA_API_KEY`** (see `ENV_SETUP.md` for details).
 
 ---
 
@@ -60,10 +60,22 @@ pip install -r requirements.txt
 
 > **TA‑Lib** system libs may be required. On macOS (brew): `brew install ta-lib`. On Ubuntu/Debian: `sudo apt-get install -y ta-lib` (or build from source), then `pip install TA-Lib`.
 
-2) **Export your API key**:
+2) **Set up environment variables**:
+
+**Option A: Automated setup (Recommended)**
 ```bash
+python setup_env.py
+```
+
+**Option B: Manual setup**
+```bash
+# Copy the template and edit it
+cp env_template.txt .env
+# Edit .env and add your API key
 export TWELVEDATA_API_KEY=YOUR_KEY_HERE  # PowerShell: $env:TWELVEDATA_API_KEY="YOUR_KEY_HERE"
 ```
+
+> See [ENV_SETUP.md](ENV_SETUP.md) for detailed environment configuration options.
 
 3) **Run**:
 ```bash

@@ -9,6 +9,10 @@ import pandas as pd
 import numpy as np
 import talib as ta
 from typing import Tuple, Dict, Any
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 class DataFetcher:

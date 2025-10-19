@@ -1,0 +1,104 @@
+# Stock ML Project Environment Variables
+# Copy this file to .env and fill in your actual values
+
+# =============================================================================
+# REQUIRED: API Configuration
+# =============================================================================
+
+# Twelve Data API Key (REQUIRED)
+# Get your free API key from: https://twelvedata.com/
+# This is required for fetching stock data
+TWELVEDATA_API_KEY=your_twelvedata_api_key_here
+
+# =============================================================================
+# OPTIONAL: Application Configuration
+# =============================================================================
+
+# Output directory for artifacts (charts, CSV files, etc.)
+# Default: artifacts
+OUTPUT_DIR=artifacts
+
+# Default number of bars to fetch from API
+# Default: 5000
+DEFAULT_BARS=5000
+
+# Default test ratio for train/test split
+# Default: 0.2 (20% for testing)
+TEST_RATIO=0.2
+
+# Random state for reproducible results
+# Default: 42
+RANDOM_STATE=42
+
+# =============================================================================
+# OPTIONAL: Model Configuration
+# =============================================================================
+
+# Random Forest hyperparameters
+RF_N_ESTIMATORS=300
+RF_MAX_DEPTH=6
+RF_MIN_SAMPLES_LEAF=5
+
+# XGBoost hyperparameters
+XGB_N_ESTIMATORS=400
+XGB_MAX_DEPTH=4
+XGB_LEARNING_RATE=0.05
+XGB_SUBSAMPLE=0.9
+XGB_COLSAMPLE_BYTREE=0.9
+
+# =============================================================================
+# OPTIONAL: Backtesting Configuration
+# =============================================================================
+
+# Classification threshold for predictions
+# Default: 0.5
+PREDICTION_THRESHOLD=0.5
+
+# Rolling Sharpe window size
+# Default: 252
+ROLLING_SHARPE_WINDOW=252
+
+# =============================================================================
+# OPTIONAL: Visualization Configuration
+# =============================================================================
+
+# Chart DPI (dots per inch)
+# Default: 300
+CHART_DPI=300
+
+# Chart figure size (width, height)
+# Default: 12, 8
+CHART_WIDTH=12
+CHART_HEIGHT=8
+
+# =============================================================================
+# OPTIONAL: Logging Configuration
+# =============================================================================
+
+# Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+# Default: INFO
+LOG_LEVEL=INFO
+
+# Enable verbose output
+# Default: true
+VERBOSE=true
+
+# =============================================================================
+# OPTIONAL: Development Configuration
+# =============================================================================
+
+# Enable debug mode
+# Default: false
+DEBUG=false
+
+# Enable data validation warnings
+# Default: true
+VALIDATE_DATA=true
+
+# Minimum bars required for analysis
+# Default: 100
+MIN_BARS=100
+
+# Minimum samples required after feature engineering
+# Default: 50
+MIN_SAMPLES=50
