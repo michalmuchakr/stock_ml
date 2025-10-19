@@ -79,7 +79,11 @@ export TWELVEDATA_API_KEY=YOUR_KEY_HERE  # PowerShell: $env:TWELVEDATA_API_KEY="
 
 3) **Run**:
 ```bash
+# Basic run
 python -m src.main --ticker AAPL --tf 15m --bars 5000
+
+# With hyperparameter tuning (slower but potentially better performance)
+python -m src.main --ticker AAPL --tf 15m --bars 5000 --tune-hyperparameters
 ```
 
 4) **Outputs**:
@@ -89,9 +93,21 @@ python -m src.main --ticker AAPL --tf 15m --bars 5000
 
 ---
 
+## Features
+
+### Hyperparameter Tuning
+The pipeline now includes optional hyperparameter tuning using:
+- **Random Forest**: RandomizedSearchCV with TimeSeriesSplit for time series validation (faster than GridSearchCV)
+- **XGBoost**: Early stopping-based tuning for efficient parameter search
+- **Parameters tuned**:
+  - Random Forest: `n_estimators`, `max_depth`, `min_samples_leaf`, `min_samples_split`, `max_features`
+  - XGBoost: `n_estimators`, `max_depth`, `learning_rate` (with early stopping)
+
+Enable with the `--tune-hyperparameters` flag. This approach is faster than traditional grid search while still finding good parameters.
+
 ## Extras (optional, nice‑to‑have)
-- Walk‑forward validation with `TimeSeriesSplit`
-- Basic hyperparameter search
+- Walk‑forward validation with `TimeSeriesSplit` ✅
+- Basic hyperparameter search ✅
 - Transaction cost sensitivity
 - Feature importance comparison
 - Save artifacts with timestamps

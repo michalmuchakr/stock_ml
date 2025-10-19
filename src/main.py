@@ -3,7 +3,6 @@ Main module for stock prediction ML pipeline.
 Orchestrates data processing, model training, backtesting, and visualization.
 """
 
-import argparse
 import os
 import sys
 from typing import Dict, Any
@@ -13,15 +12,16 @@ from .data import DataProcessor
 from .models import ModelManager
 from .backtesting import BacktestManager
 from .visualization import VisualizationManager
+from .cli import create_argument_parser
 
 
 class StockPredictionPipeline:
     """Main pipeline for stock prediction analysis."""
     
-    def __init__(self, output_dir: str = "artifacts"):
+    def __init__(self, output_dir: str = "artifacts", enable_hyperparameter_tuning: bool = False):
         self.output_dir = output_dir
         self.data_processor = DataProcessor()
-        self.model_manager = ModelManager()
+        self.model_manager = ModelManager(enable_hyperparameter_tuning=enable_hyperparameter_tuning)
         self.backtest_manager = None  # Will be initialized with timeframe
         self.visualization_manager = None  # Will be initialized with timeframe
         
@@ -96,14 +96,6 @@ class StockPredictionPipeline:
             # Print summary
             self._print_analysis_summary(comparison_table, generated_files)
             
-            return {
-                "data_results": data_results,
-                "model_results": model_results,
-                "backtest_results": backtest_results,
-                "generated_files": generated_files,
-                "comparison_table": comparison_table
-            }
-            
         except Exception as e:
             print(f"\nError during analysis: {e}")
             print("Please check your API key, ticker symbol, and internet connection.")
@@ -124,51 +116,6 @@ class StockPredictionPipeline:
             print(f"  - {basename}")
 
 
-def create_argument_parser():
-    """Create and configure argument parser."""
-    parser = argparse.ArgumentParser(
-        description="Short-horizon stock predictor backtest",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  python -m src.main --ticker AAPL --tf 15m --bars 5000
-  python -m src.main --ticker MSFT --tf 1h --bars 3000
-  python -m src.main --ticker TSLA --tf 4h --bars 2000
-        """
-    )
-    
-    parser.add_argument(
-        "--ticker", 
-        type=str, 
-        required=True, 
-        help="US ticker symbol (e.g., AAPL, MSFT, TSLA)"
-    )
-    
-    parser.add_argument(
-        "--tf", 
-        type=str, 
-        required=True, 
-        choices=["1m", "15m", "1h", "4h"], 
-        help="Timeframe for analysis"
-    )
-    
-    parser.add_argument(
-        "--bars", 
-        type=int, 
-        default=5000, 
-        help="Number of bars to fetch (default: 5000)"
-    )
-    
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default="artifacts",
-        help="Output directory for results (default: artifacts)"
-    )
-    
-    return parser
-
-
 def main():
     """Main entry point."""
     parser = create_argument_parser()
@@ -176,8 +123,11 @@ def main():
     
     try:
         # Create and run pipeline
-        pipeline = StockPredictionPipeline(output_dir=args.output_dir)
-        results = pipeline.run_analysis(args.ticker, args.tf, args.bars)
+        pipeline = StockPredictionPipeline(
+            output_dir=args.output_dir,
+            enable_hyperparameter_tuning=args.tune_hyperparameters
+        )
+        pipeline.run_analysis(args.ticker, args.tf, args.bars)
         
         print(f"\nAnalysis completed successfully!")
         return 0
