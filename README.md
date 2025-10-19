@@ -84,12 +84,20 @@ python -m src.main --ticker AAPL --tf 15m --bars 5000
 
 # With hyperparameter tuning (slower but potentially better performance)
 python -m src.main --ticker AAPL --tf 15m --bars 5000 --tune-hyperparameters
+
+# Custom output directory
+python -m src.main --ticker MSFT --tf 1h --bars 3000 --output-dir my_results
+
+# Different timeframes
+python -m src.main --ticker TSLA --tf 4h --bars 2000
 ```
 
 4) **Outputs**:
 - Metrics printed to console
-- Charts under `artifacts/`
+- Charts under `artifacts/` (or custom output directory)
 - Model comparison table in console
+- Hyperparameter tuning results (when enabled)
+- High-resolution plots (300 DPI) with professional styling
 
 ---
 
@@ -102,12 +110,37 @@ The pipeline now includes optional hyperparameter tuning using:
 - **Parameters tuned**:
   - Random Forest: `n_estimators`, `max_depth`, `min_samples_leaf`, `min_samples_split`, `max_features`
   - XGBoost: `n_estimators`, `max_depth`, `learning_rate` (with early stopping)
+- **Time Series Validation**: Proper time series cross-validation to prevent data leakage
+- **Efficient Search**: RandomizedSearchCV is faster than GridSearchCV while still finding good parameters
 
-Enable with the `--tune-hyperparameters` flag. This approach is faster than traditional grid search while still finding good parameters.
+Enable with the `--tune-hyperparameters` flag. This approach balances performance optimization with computational efficiency.
+
+### Command Line Interface
+The CLI supports comprehensive options:
+- `--ticker`: US stock ticker symbol (required)
+- `--tf`: Timeframe - 1m, 15m, 1h, 4h (required)
+- `--bars`: Number of bars to fetch (default: 5000)
+- `--output-dir`: Output directory for results (default: artifacts)
+- `--tune-hyperparameters`: Enable hyperparameter tuning (optional)
+
+### Modular Architecture
+The codebase follows a clean modular design:
+- **Data Module**: API integration, feature engineering, and preprocessing
+- **Models Module**: Machine learning models with hyperparameter tuning
+- **Backtesting Module**: Strategy simulation and performance analysis
+- **Visualization Module**: Professional charts and plots
+- **CLI Module**: Command-line interface and argument parsing
+- **Main Module**: Pipeline orchestration and coordination
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation of the modular design.
 
 ## Extras (optional, nice‑to‑have)
 - Walk‑forward validation with `TimeSeriesSplit` ✅
-- Basic hyperparameter search ✅
+- Advanced hyperparameter search with RandomizedSearchCV and early stopping ✅
+- Professional visualization with high-resolution charts ✅
+- Comprehensive CLI interface ✅
+- Time series cross-validation ✅
+- Performance comparison charts ✅
 - Transaction cost sensitivity
 - Feature importance comparison
 - Save artifacts with timestamps

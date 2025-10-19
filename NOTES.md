@@ -16,6 +16,8 @@
 - **Random Forest**: Robust, handles non-linear relationships, less prone to overfitting
 - **XGBoost**: Gradient boosting, often superior performance, but more prone to overfitting
 - **Hyperparameters**: Conservative settings to avoid overfitting (moderate depth, regularization)
+- **Advanced Tuning**: Optional RandomizedSearchCV for Random Forest and early stopping for XGBoost
+- **Time Series Validation**: TimeSeriesSplit for proper time series cross-validation
 
 ## Backtesting Strategy
 - **Signal Application**: Model prediction at time `t` applied to next bar `t+1` - realistic execution
@@ -46,9 +48,15 @@
 # Set API key
 export TWELVEDATA_API_KEY=your_key_here
 
-# Run with different tickers and timeframes
+# Basic run with different tickers and timeframes
 python -m src.main --ticker AAPL --tf 15m --bars 5000
 python -m src.main --ticker MSFT --tf 1h --bars 3000
+
+# With hyperparameter tuning (slower but potentially better performance)
+python -m src.main --ticker AAPL --tf 15m --bars 5000 --tune-hyperparameters
+
+# Custom output directory
+python -m src.main --ticker TSLA --tf 4h --bars 2000 --output-dir my_results
 ```
 
 ## Implementation Features
@@ -58,13 +66,19 @@ python -m src.main --ticker MSFT --tf 1h --bars 3000
 - **Enhanced Plotting**: High-quality charts with proper styling and grid
 - **Data Validation**: Minimum data requirements and quality checks
 - **Modular Design**: Clean separation of concerns between data, models, and visualization
+- **Advanced Hyperparameter Tuning**: RandomizedSearchCV and early stopping for optimal model performance
+- **Time Series Cross-Validation**: Proper time series validation to prevent data leakage
+- **Professional CLI Interface**: Comprehensive command-line options with help and examples
+- **Performance Comparison Charts**: Visual comparison of model performance metrics
 
 ## Output Artifacts
 - **Equity curves** for both RandomForest and XGBoost models
 - **Rolling Sharpe ratio charts** showing risk-adjusted performance over time
+- **Performance comparison charts** with bar charts of key metrics
 - **Model comparison CSV** with all performance metrics
-- **Console output** with detailed results and file locations
-- **High-resolution plots** (300 DPI) saved to `artifacts/` directory
+- **Console output** with detailed results, hyperparameter tuning results, and file locations
+- **High-resolution plots** (300 DPI) saved to configurable output directory
+- **Hyperparameter tuning results** printed to console when enabled
 
 ## Performance Metrics
 - **Total Return**: Cumulative strategy return
