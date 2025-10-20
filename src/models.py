@@ -8,8 +8,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, TimeSeriesSplit
-from skopt import BayesSearchCV
-from skopt.space import Real, Integer
+import optuna
 from xgboost import XGBClassifier
 from typing import Tuple, Dict, Any, List
 
@@ -46,23 +45,23 @@ class ModelTrainer:
             }
         }
     
-    def _get_bayesian_parameter_space(self) -> Dict[str, Any]:
+    def _get_optuna_parameter_space(self) -> Dict[str, Any]:
         """
-        Define parameter space for Bayesian optimization.
+        Define parameter space for Optuna optimization.
         
         Returns:
             Dictionary of parameter spaces for each model
         """
         return {
             "xgboost": {
-                "n_estimators": Integer(50, 1000),
-                "max_depth": Integer(2, 10),
-                "learning_rate": Real(0.001, 0.5, prior='log-uniform'),
-                "subsample": Real(0.6, 1.0, prior='uniform'),
-                "colsample_bytree": Real(0.6, 1.0, prior='uniform'),
-                "reg_alpha": Real(0.001, 10.0, prior='log-uniform'),
-                "reg_lambda": Real(0.001, 10.0, prior='log-uniform'),
-                "gamma": Real(0.001, 5.0, prior='log-uniform')
+                "n_estimators": (50, 1000),
+                "max_depth": (2, 10),
+                "learning_rate": (0.001, 0.5),
+                "subsample": (0.6, 1.0),
+                "colsample_bytree": (0.6, 1.0),
+                "reg_alpha": (0.001, 10.0),
+                "reg_lambda": (0.001, 10.0),
+                "gamma": (0.001, 5.0)
             }
         }
     
@@ -97,7 +96,7 @@ class ModelTrainer:
     
     def _tune_hyperparameters(self, X_train: np.ndarray, y_train: np.ndarray) -> Dict[str, Any]:
         """
-        Perform hyperparameter tuning using RandomizedSearchCV for Random Forest and BayesSearchCV for XGBoost.
+        Perform hyperparameter tuning using RandomizedSearchCV for Random Forest and Optuna for XGBoost.
         
         Args:
             X_train: Training features
@@ -108,7 +107,7 @@ class ModelTrainer:
         """
         print("Performing hyperparameter tuning...")
         parameter_grids = self._get_parameter_grids()
-        bayesian_spaces = self._get_bayesian_parameter_space()
+        optuna_spaces = self._get_optuna_parameter_space()
         tuned_models = {}
         
         # Use TimeSeriesSplit for time series data
@@ -139,33 +138,62 @@ class ModelTrainer:
         print(f"    Best parameters: {rf_random_search.best_params_}")
         print(f"    Best CV score: {rf_random_search.best_score_:.4f}")
         
-        # Tune XGBoost with BayesSearchCV
-        print("  Tuning xgboost with Bayesian optimization...")
-        xgb_base_model = XGBClassifier(
-            objective="binary:logistic",
-            eval_metric="logloss",
-            n_jobs=-1,
-            random_state=self.random_state,
-            verbosity=0
-        )
+        # Tune XGBoost with Optuna
+        print("  Tuning xgboost with Optuna optimization...")
         
-        xgb_bayes_search = BayesSearchCV(
-            estimator=xgb_base_model,
-            search_spaces=bayesian_spaces["xgboost"],
-            cv=tscv,
-            scoring='accuracy',
-            n_iter=50,  # Number of iterations for Bayesian optimization
-            n_jobs=-1,
-            verbose=0,
-            random_state=self.random_state
-        )
+        def objective(trial):
+            params = {
+                'n_estimators': trial.suggest_int('n_estimators', *optuna_spaces["xgboost"]["n_estimators"]),
+                'max_depth': trial.suggest_int('max_depth', *optuna_spaces["xgboost"]["max_depth"]),
+                'learning_rate': trial.suggest_float('learning_rate', *optuna_spaces["xgboost"]["learning_rate"], log=True),
+                'subsample': trial.suggest_float('subsample', *optuna_spaces["xgboost"]["subsample"]),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', *optuna_spaces["xgboost"]["colsample_bytree"]),
+                'reg_alpha': trial.suggest_float('reg_alpha', *optuna_spaces["xgboost"]["reg_alpha"], log=True),
+                'reg_lambda': trial.suggest_float('reg_lambda', *optuna_spaces["xgboost"]["reg_lambda"], log=True),
+                'gamma': trial.suggest_float('gamma', *optuna_spaces["xgboost"]["gamma"], log=True),
+                'objective': 'binary:logistic',
+                'eval_metric': 'logloss',
+                'n_jobs': -1,
+                'random_state': self.random_state,
+                'verbosity': 0
+            }
+            
+            # Use cross-validation to get a robust score
+            scores = []
+            for train_idx, val_idx in tscv.split(X_train):
+                X_tr, X_val = X_train[train_idx], X_train[val_idx]
+                y_tr, y_val = y_train[train_idx], y_train[val_idx]
+                
+                model = XGBClassifier(**params)
+                model.fit(X_tr, y_tr)
+                score = model.score(X_val, y_val)
+                scores.append(score)
+            
+            return np.mean(scores)
         
-        xgb_bayes_search.fit(X_train, y_train)
-        tuned_models["xgboost"] = xgb_bayes_search.best_estimator_
-        self.best_params["xgboost"] = xgb_bayes_search.best_params_
+        # Create Optuna study
+        study = optuna.create_study(direction='maximize', sampler=optuna.samplers.TPESampler(seed=self.random_state))
+        study.optimize(objective, n_trials=50)
         
-        print(f"    Best parameters: {xgb_bayes_search.best_params_}")
-        print(f"    Best CV score: {xgb_bayes_search.best_score_:.4f}")
+        # Get best parameters and create final model
+        best_params = study.best_params
+        best_params.update({
+            'objective': 'binary:logistic',
+            'eval_metric': 'logloss',
+            'n_jobs': -1,
+            'random_state': self.random_state,
+            'verbosity': 0
+        })
+        
+        # Train final model with best parameters
+        xgb_final_model = XGBClassifier(**best_params)
+        xgb_final_model.fit(X_train, y_train)
+        
+        tuned_models["xgboost"] = xgb_final_model
+        self.best_params["xgboost"] = best_params
+        
+        print(f"    Best parameters: {best_params}")
+        print(f"    Best CV score: {study.best_value:.4f}")
         
         return tuned_models
     

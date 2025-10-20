@@ -16,7 +16,7 @@
 - **Random Forest**: Robust, handles non-linear relationships, less prone to overfitting
 - **XGBoost**: Gradient boosting, often superior performance, but more prone to overfitting
 - **Hyperparameters**: Conservative settings to avoid overfitting (moderate depth, regularization)
-- **Advanced Tuning**: Optional RandomizedSearchCV for Random Forest and BayesSearchCV for XGBoost
+- **Advanced Tuning**: Optional RandomizedSearchCV for Random Forest and Optuna TPE for XGBoost
 - **Time Series Validation**: TimeSeriesSplit for proper time series cross-validation
 
 ## Backtesting Strategy
@@ -66,7 +66,7 @@ python -m src.main --ticker TSLA --tf 4h --bars 2000 --output-dir my_results
 - **Enhanced Plotting**: High-quality charts with proper styling and grid
 - **Data Validation**: Minimum data requirements and quality checks
 - **Modular Design**: Clean separation of concerns between data, models, and visualization
-- **Advanced Hyperparameter Tuning**: RandomizedSearchCV and BayesSearchCV for optimal model performance
+- **Advanced Hyperparameter Tuning**: RandomizedSearchCV and Optuna TPE for optimal model performance
 - **Time Series Cross-Validation**: Proper time series validation to prevent data leakage
 - **Professional CLI Interface**: Comprehensive command-line options with help and examples
 - **Performance Comparison Charts**: Visual comparison of model performance metrics

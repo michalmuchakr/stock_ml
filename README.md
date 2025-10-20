@@ -106,12 +106,12 @@ python -m src.main --ticker TSLA --tf 4h --bars 2000
 ### Hyperparameter Tuning
 The pipeline now includes optional hyperparameter tuning using:
 - **Random Forest**: RandomizedSearchCV with TimeSeriesSplit for time series validation (faster than GridSearchCV)
-- **XGBoost**: BayesSearchCV for intelligent parameter search using Bayesian optimization
+- **XGBoost**: Optuna for intelligent parameter search using TPE (Tree-structured Parzen Estimator)
 - **Parameters tuned**:
   - Random Forest: `n_estimators`, `max_depth`, `min_samples_leaf`, `min_samples_split`, `max_features`
-  - XGBoost: `n_estimators`, `max_depth`, `learning_rate`, `subsample`, `colsample_bytree`, `reg_alpha`, `reg_lambda`, `gamma` (with Bayesian optimization)
+  - XGBoost: `n_estimators`, `max_depth`, `learning_rate`, `subsample`, `colsample_bytree`, `reg_alpha`, `reg_lambda`, `gamma` (with Optuna TPE optimization)
 - **Time Series Validation**: Proper time series cross-validation to prevent data leakage
-- **Efficient Search**: RandomizedSearchCV for Random Forest and BayesSearchCV for XGBoost provide intelligent parameter search
+- **Efficient Search**: RandomizedSearchCV for Random Forest and Optuna TPE for XGBoost provide intelligent parameter search
 
 Enable with the `--tune-hyperparameters` flag. This approach balances performance optimization with computational efficiency.
 
@@ -136,7 +136,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed documentation of the modular
 
 ## Extras (optional, nice‑to‑have)
 - Walk‑forward validation with `TimeSeriesSplit` ✅
-- Advanced hyperparameter search with RandomizedSearchCV and BayesSearchCV ✅
+- Advanced hyperparameter search with RandomizedSearchCV and Optuna TPE ✅
 - Professional visualization with high-resolution charts ✅
 - Comprehensive CLI interface ✅
 - Time series cross-validation ✅

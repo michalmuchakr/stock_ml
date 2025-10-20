@@ -51,7 +51,7 @@ Examples:
     parser.add_argument(
         "--tune-hyperparameters",
         action="store_true",
-        help="Enable hyperparameter tuning using RandomizedSearchCV and BayesSearchCV (intelligent parameter search)"
+        help="Enable hyperparameter tuning using RandomizedSearchCV and Optuna TPE (intelligent parameter search)"
     )
     
     return parser

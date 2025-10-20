@@ -49,7 +49,7 @@ src/
 - Support for multiple model types (RandomForest, XGBoost)
 - Comprehensive evaluation metrics
 - Feature importance analysis
-- Advanced hyperparameter tuning with RandomizedSearchCV and BayesSearchCV
+- Advanced hyperparameter tuning with RandomizedSearchCV and Optuna TPE
 - Time series cross-validation for robust model selection
 - Configurable hyperparameters with optimized defaults
 
@@ -206,7 +206,7 @@ The original `utils.py` file has been deprecated in favor of the modular structu
 
 The architecture has been enhanced with advanced features:
 
-1. **Advanced Hyperparameter Tuning**: RandomizedSearchCV for Random Forest and BayesSearchCV for XGBoost
+1. **Advanced Hyperparameter Tuning**: RandomizedSearchCV for Random Forest and Optuna TPE for XGBoost
 2. **Time Series Cross-Validation**: Proper time series validation for robust model selection
 3. **Enhanced CLI Interface**: Comprehensive command-line options with hyperparameter tuning support
 4. **Professional Visualization**: Improved chart styling and additional plot types
